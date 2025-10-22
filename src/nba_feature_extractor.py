@@ -1,7 +1,20 @@
 import pandas as pd
 
 class NBAFeatureExtractor:
-    """Builds leak-free season-to-date features for NBA games."""
+    """Builds leak-free season-to-date features for NBA games.
+    
+    Ultimately, we want a dataframe that each row is a game and each column is a feature, most of which are rolling season to date averages from the previous games. 
+    The problem is that we need a joined game dataframe to calculate our initial stats (eg ortg, drtg for each game since some of them depend on opp), 
+    then we need an unjoined (2 row per game) dataframe to calculate the rolling averages (so we can easily just group by team and sort by date since theres a row for each team), 
+    then we need to join them back for our final feature dataframe.
+    So we have to:
+    - Join the games into a single row per game
+    - calculate stats for each game (we do it this way so we have both teams to calculate stats that depend on the opponents like drtg and orb%)
+    - split them so there's one dataframe for the home teams and one dataframe for the away teams
+    - Concat them so we have every game in one dataframe with 2 rows per game, one row for the home team and one row for the away team, now with our calculated stats. This way we can easily calculate rolling season to date average stats for each team
+    - then finally, join them again so we have our final feature dataframe with season to date statistics for each team for each game (one row per game with a/b stats)
+    
+    """
 
     def __init__(self, processed_games_df: pd.DataFrame) -> None:
         self.nba_games_df = processed_games_df
@@ -13,6 +26,7 @@ class NBAFeatureExtractor:
         self.games_by_home_w_stats = None
         self.games_by_away_w_stats = None
         self.all_games_w_stats = None
+        self.all_games_w_s2d = None
         self.feature_set = None
 
     # ---------- public API ----------
@@ -42,6 +56,18 @@ class NBAFeatureExtractor:
         final_x_test = self._make_x(test_set, use_delta_stats=use_delta_stats)
         final_y_test = test_set["WL"]
         return final_x_test, final_y_test
+    
+    def get_feature_from_team_abbr(self, home: str, away: str):
+        # Get most recent regular season games
+        sorted = self.all_games_w_s2d.sort_values(["GAME_DATE"])
+        home_df = sorted[(sorted["TEAM_ABBREVIATION"] == home.upper()) & (sorted["SEASON_ID"].astype(str).str.startswith("2"))].tail(1)
+        away_df = sorted[(sorted["TEAM_ABBREVIATION"] == away.upper()) & (sorted["SEASON_ID"].astype(str).str.startswith("2"))].tail(1)
+        feature_predict = (home_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True)) - (away_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True)) #home_df.reset_index(drop=True) - away_df.reset_index(drop=True)
+        feature_predict.columns = [f'DELTA_{s}_S2D' for s in self.stats]
+        return feature_predict
+    
+    def get_team_abbr_list(self):
+        return self.all_games_w_s2d["TEAM_ABBREVIATION"].unique()
     
     # ---------- pipeline steps ----------
 
@@ -81,6 +107,10 @@ class NBAFeatureExtractor:
         # Use groupby transform to create expanding season to date averages for each of the relevant stats for each team
         for s in self.stats:
             all_games_copy[f'{s}_S2D'] = (all_games_copy.groupby(['TEAM_ID','SEASON_ID'], sort=False)[s].transform(lambda x: x.shift(1).expanding().mean()))
+
+        # Save all games to use later to get features for predictions
+        self.all_games_w_s2d = all_games_copy
+
         # Reduce to relevant columns
         reduced_all_games_copy = all_games_copy[["GAME_ID", "TEAM_ABBREVIATION", "MATCHUP"] + [f'{s}_S2D' for s in self.stats]]
 

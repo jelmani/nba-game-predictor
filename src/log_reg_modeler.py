@@ -23,7 +23,7 @@ class LogRegModeler:
         norm_X, self.mean_, self.std_ = self._get_scaled_matrix(X_train.to_numpy())
         self.w_, self.b_ = self._compute_gradient_descent(norm_X, y_train.to_numpy(), self.alpha, self.lambda_, self.iterations)
 
-    def get_probabilities(self, X):
+    def predict(self, X):
         return self._compute_model_output(self._standardize_with_fitted(X), self.w_, self.b_)
     
 
