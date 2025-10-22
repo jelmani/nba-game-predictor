@@ -4,10 +4,19 @@ from log_reg_modeler import LogRegModeler
 import argparse
 
 
+# Test model
+
+# ingestor = NBADataIngestor()
+# extractor = NBAFeatureExtractor(ingestor.build()).build()
+# modeler = LogRegModeler()
+# X_train, y_train = extractor.get_train()
+# modeler.fit(X_train, y_train)
 
 # X_test, y_test = extractor.get_test()
 
 # modeler.test_model(X_test, y_test)
+
+# Predictor
 parser = argparse.ArgumentParser(
     description="Use logistic regression to predict the winner of an NBA game."
 )

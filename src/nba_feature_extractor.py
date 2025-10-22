@@ -62,7 +62,7 @@ class NBAFeatureExtractor:
         sorted = self.all_games_w_s2d.sort_values(["GAME_DATE"])
         home_df = sorted[(sorted["TEAM_ABBREVIATION"] == home.upper()) & (sorted["SEASON_ID"].astype(str).str.startswith("2"))].tail(1)
         away_df = sorted[(sorted["TEAM_ABBREVIATION"] == away.upper()) & (sorted["SEASON_ID"].astype(str).str.startswith("2"))].tail(1)
-        feature_predict = (home_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True)) - (away_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True)) #home_df.reset_index(drop=True) - away_df.reset_index(drop=True)
+        feature_predict = (home_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True)) - (away_df[[f'{s}_S2D' for s in self.stats]].reset_index(drop=True))
         feature_predict.columns = [f'DELTA_{s}_S2D' for s in self.stats]
         return feature_predict
     

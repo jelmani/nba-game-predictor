@@ -82,11 +82,7 @@ class LogRegModeler:
         return np.mean(loss)
     
     def _compute_gradient(self, X, y_target, w, b, lambda_):
-        # print(f"len(X): {len(X)}")
-        # print(f"y target shape: {y_target.reshape(-1, 1).shape}")
-        # print(f"model output dot x shape: {np.dot((self._compute_model_output(X, w, b) - y_target), X).shape}")
         dj_dw = (np.dot((self._compute_model_output(X, w, b) - y_target), X) / len(X)) + ((lambda_ / len(X)) * w)
-        # print(f"dj_dw shape: {dj_dw.shape}")
         dj_db = np.mean((self._compute_model_output(X, w, b) - y_target))
         return (dj_dw, dj_db)
     
@@ -96,7 +92,6 @@ class LogRegModeler:
         b = 0
         cost_history = []
         for _ in range(iterations):
-            # print(f"gradients: {compute_gradient(X, y_target, w, b, lambda_)}")
             dj_dw, dj_db = self._compute_gradient(X, y_target, w, b, lambda_)
             w -= alpha * dj_dw
             b -= alpha * dj_db
